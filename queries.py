@@ -15,9 +15,14 @@ cursor = connection.cursor()
 # Г) топ-3 товаров по выручке и их доля в общей выручке за любой год
 
 cursor.execute("""
-SELECT * FROM purchases
+SELECT to_char(purchases.purchase_date, 'month') AS month,
+ROUND( AVG(items.price ), 2) AS avg_price
+FROM purchases
 JOIN users ON purchases.userID = users.userID
-WHERE users.age >=18 AND users.age <=25
+JOIN items ON purchases.itemID = items.itemID
+WHERE users.age >=18 
+AND users.age <=25
+GROUP BY to_char(purchases.purchase_date, 'month')
 """)
 while True:
     result = cursor.fetchone()
