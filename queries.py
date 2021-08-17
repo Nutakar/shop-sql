@@ -11,26 +11,116 @@ cursor = connection.cursor()
 # - пользователи в возрастном диапазоне от 18 до 25 лет включительно
 # - пользователи в возрастном диапазоне от 26 до 35 лет включительно
 # Б) в каком месяце года выручка от пользователей в возрастном диапазоне 35+ самая большая
-# В) какой товар обеспечивает дает наибольший вклад в выручку за последний год
+# В) какой товар обеспечивает наибольший вклад в выручку за последний год
 # Г) топ-3 товаров по выручке и их доля в общей выручке за любой год
 
-cursor.execute("""
-SELECT to_char(purchases.purchase_date, 'month') AS month,
-ROUND( AVG(items.price ), 2) AS avg_price
-FROM purchases
-JOIN users ON purchases.userID = users.userID
-JOIN items ON purchases.itemID = items.itemID
-WHERE users.age >=18 
-AND users.age <=25
-GROUP BY to_char(purchases.purchase_date, 'month')
-""")
-while True:
-    result = cursor.fetchone()
-    print(result)
-    if result == None:
-        break
+def average_per_month_18_25():
+    cursor.execute("""
+    SELECT 
+        to_char(purchases.purchase_date, 'month') AS month,
+        ROUND( AVG(items.price ), 2) AS avg_price
+    FROM purchases
+    JOIN users ON purchases.userID = users.userID
+    JOIN items ON purchases.itemID = items.itemID
+    WHERE 
+        users.age >=18 
+        AND users.age <=25
+    GROUP BY to_char(purchases.purchase_date, 'month')
+    """)
+    while True:
+        result = cursor.fetchone()
+        if result == None:
+            break
+        else:
+            print(result)
+
+def average_per_month_26_35():
+    cursor.execute("""
+    SELECT 
+        to_char(purchases.purchase_date, 'month') AS month,
+        ROUND( AVG(items.price ), 2) AS avg_price
+    FROM purchases
+    JOIN users ON purchases.userID = users.userID
+    JOIN items ON purchases.itemID = items.itemID
+    WHERE 
+        users.age >=26
+        AND users.age <=35
+    GROUP BY to_char(purchases.purchase_date, 'month')
+    """)
+    while True:
+        result = cursor.fetchone()
+        if result == None:
+            break
+        else:
+            print(result)
+
+def max_money_month_35():
+    cursor.execute("""
+    SELECT 
+        to_char(purchases.purchase_date, 'month') AS month,
+        date_part('year', purchases.purchase_date) AS year,
+        SUM(items.price ) AS sum_price
+    FROM purchases
+    JOIN users ON purchases.userID = users.userID
+    JOIN items ON purchases.itemID = items.itemID
+    WHERE users.age >=35
+    GROUP BY 
+        to_char(purchases.purchase_date, 'month'), 
+        date_part('year', purchases.purchase_date)
+    ORDER BY sum_price DESC
+    LIMIT 1
+    """)
+    while True:
+        result = cursor.fetchone()
+        if result == None:
+            break
+        else:
+            print(result)
 
 
+def max_money_share_item():
+    cursor.execute("""
+    SELECT COUNT(purchases.itemID) * items.price AS item_sum, items.itemID
+    FROM items
+    LEFT JOIN purchases ON purchases.itemID = items.itemID
+    WHERE date_part('year', purchases.purchase_date) = date_part('year', now())
+    GROUP BY items.itemID
+    ORDER BY item_sum DESC
+    LIMIT 1
+    """)
+    while True:
+        result = cursor.fetchone()
+        if result == None:
+            break
+        else:
+            print(result)
+
+def max_money_share_top3():
+    cursor.execute("""
+    SELECT SUM(total_sum)
+    FROM (SELECT SUM(item_sum)
+    FROM (SELECT COUNT(purchases.itemID) * items.price AS item_sum, items.itemID
+    FROM items
+    LEFT JOIN purchases ON purchases.itemID = items.itemID
+    WHERE date_part('year', purchases.purchase_date) = 2020
+    GROUP BY items.itemID, items.price) AS total_sum
+    GROUP BY total_sum) AS total_share 
+    GROUP BY total_share
+    ORDER BY total_share DESC
+    LIMIT 3
+    """)
+    while True:
+        result = cursor.fetchone()
+        if result == None:
+            break
+        else:
+            print(result)
+
+# average_per_month_18_25()
+# average_per_month_26_35()
+# max_money_month_35()
+# max_money_share_item()
+max_money_share_top3()
 
 cursor.close()
 connection.close()
