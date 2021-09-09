@@ -12,7 +12,6 @@ cursor = connection.cursor()
 # - пользователи в возрастном диапазоне от 26 до 35 лет включительно
 # Б) в каком месяце года выручка от пользователей в возрастном диапазоне 35+ самая большая
 # В) какой товар обеспечивает наибольший вклад в выручку за последний год
-# Г) топ-3 товаров по выручке и их доля в общей выручке за любой год
 
 def average_per_month_18_25():
     cursor.execute("""
@@ -95,32 +94,12 @@ def max_money_share_item():
         else:
             print(result)
 
-def max_money_share_top3():
-    cursor.execute("""
-    SELECT SUM(total_sum)
-    FROM (SELECT SUM(item_sum)
-    FROM (SELECT COUNT(purchases.itemID) * items.price AS item_sum, items.itemID
-    FROM items
-    LEFT JOIN purchases ON purchases.itemID = items.itemID
-    WHERE date_part('year', purchases.purchase_date) = 2020
-    GROUP BY items.itemID, items.price) AS total_sum
-    GROUP BY total_sum) AS total_share 
-    GROUP BY total_share
-    ORDER BY total_share DESC
-    LIMIT 3
-    """)
-    while True:
-        result = cursor.fetchone()
-        if result == None:
-            break
-        else:
-            print(result)
 
 # average_per_month_18_25()
 # average_per_month_26_35()
 # max_money_month_35()
 # max_money_share_item()
-max_money_share_top3()
+
 
 cursor.close()
 connection.close()
